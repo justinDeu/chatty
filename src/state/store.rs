@@ -1,17 +1,13 @@
 use std::time::Duration;
 
-use anyhow::Context;
-use tokio::{
-    net::TcpStream,
-    sync::{
-        broadcast,
-        mpsc::{self, UnboundedReceiver, UnboundedSender},
-    },
+use tokio::sync::{
+    broadcast,
+    mpsc::{self, UnboundedReceiver, UnboundedSender},
 };
 
 use crate::{Interrupted, Terminator};
 
-use super::State;
+use super::{action::Action, State};
 
 // TODO: Need to create State and update sender type
 pub struct StateStore {
@@ -28,7 +24,7 @@ impl StateStore {
     pub async fn main_loop(
         self,
         mut terminator: Terminator,
-        mut action_rx: UnboundedReceiver<State>,
+        mut action_rx: UnboundedReceiver<Action>,
         mut interrupt_rx: broadcast::Receiver<Interrupted>,
     ) -> anyhow::Result<Interrupted> {
         let mut state = State::default();
@@ -38,9 +34,18 @@ impl StateStore {
         let mut ticker = tokio::time::interval(Duration::from_secs(1));
 
         let result = loop {
-            tokio::select! {Ok(interrupted) = interrupt_rx.recv() => {
-                break interrupted;
-            }}
+            tokio::select! {
+                Some(action) = action_rx.recv() => match action {
+                    Action::Exit => {
+                        let _ =terminator.terminate(Interrupted::UserInt);
+                        break Interrupted::UserInt;
+                    },
+                    _ => (),
+                },
+                Ok(interrupted) = interrupt_rx.recv() => {
+                    break interrupted;
+                }
+            }
             self.state_tx.send(state.clone())?;
         };
 
