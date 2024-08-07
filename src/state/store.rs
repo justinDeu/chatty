@@ -38,6 +38,9 @@ impl StateStore {
         let mut ticker = tokio::time::interval(Duration::from_secs(1));
 
         let result = loop {
+            tokio::select! {Ok(interrupted) = interrupt_rx.recv() => {
+                break interrupted;
+            }}
             self.state_tx.send(state.clone())?;
         };
 
