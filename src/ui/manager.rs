@@ -16,7 +16,7 @@ use tokio::sync::{
 };
 use tokio_stream::StreamExt;
 
-use super::router::AppRouter;
+use super::panes::AppRouter;
 use crate::{
     state::{action::Action, State},
     Interrupted,

@@ -1,4 +1,5 @@
 pub use manager::UiManager;
 
+mod components;
 mod manager;
-mod router;
+mod panes;

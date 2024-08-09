@@ -6,7 +6,7 @@ use ratatui::{
     Terminal,
 };
 
-use super::ui;
+use crate::ui;
 
 pub enum InputMode {
     Normal,
