@@ -31,14 +31,6 @@ impl Component for InputPane {
         if key.kind != KeyEventKind::Press {
             return;
         }
-
-        if self.props.active_room.is_some() {
-            self.input_box.handle_key_event(key);
-
-            if key.code == KeyCode::Enter {
-                // self.submit_message();
-            }
-        }
     }
 }
 
@@ -48,7 +40,7 @@ pub struct RenderProps {
     pub show_cursor: bool,
 }
 
-impl ComponentRender<RenderProps> for InputBox {
+impl ComponentRender<RenderProps> for InputPane {
     fn render(&self, frame: &mut Frame, props: RenderProps) {
         self.input_box.render(
             frame,

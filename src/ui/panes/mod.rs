@@ -1,5 +1,5 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
-use ratatui::{prelude::*, widgets::*, Frame};
+use ratatui::{prelude::*, Frame};
 use tokio::sync::mpsc::UnboundedSender;
 
 use crate::state::{action::Action, State};
@@ -8,7 +8,8 @@ mod conversations_pane;
 mod input_pane;
 mod messages_pane;
 
-use super::components::{Component, ComponentRender};
+use crate::ui::components::component::Component;
+use crate::ui::components::component::ComponentRender;
 
 enum ActivePane {
     Input,
@@ -47,23 +48,23 @@ impl AppRouter {
 }
 
 impl Component for AppRouter {
-    fn new(state: &State, action_sender: UnboundedSender<Action>) -> Self
-    where
-        Self: Sized,
-    {
+    fn new(state: &State, action_sender: UnboundedSender<Action>) -> Self {
         AppRouter {
             props: Props {
                 active_pane: ActivePane::Input,
             },
-            action_sender,
-            input_pane: input_pane::InputPane::new(state, action_sender),
-            messages_pane: messages_pane::MessagesPane::new(state, action_sender),
-            conversations_pane: conversations_pane::ConversationsPane::new(state, action_sender),
+            action_sender: action_sender.clone(),
+            input_pane: input_pane::InputPane::new(state, action_sender.clone()),
+            messages_pane: messages_pane::MessagesPane::new(state, action_sender.clone()),
+            conversations_pane: conversations_pane::ConversationsPane::new(
+                state,
+                action_sender.clone(),
+            ),
         }
     }
 
     fn name(&self) -> &str {
-        self.get_active_page_component().name()
+        self.get_active_pane_component().name()
     }
 
     fn handle_key_event(&mut self, key: KeyEvent) {
@@ -81,16 +82,16 @@ impl Component for AppRouter {
 }
 
 impl ComponentRender<()> for AppRouter {
-    fn render(&self, frame: &mut Frame, props: ()) {
+    fn render(&self, frame: &mut Frame, _props: ()) {
         let horizontal = Layout::horizontal([Constraint::Percentage(80), Constraint::Fill(1)]);
         let [chat_area, conversation_area] = horizontal.areas(frame.size());
-        let vertical = Layout::vertical([Constraint::Min(1), Constraint::Length(3)]);
-        let [messages_area, input_area, help_area] = vertical.areas(chat_area);
+        let vertical = Layout::vertical([Constraint::Fill(1), Constraint::Length(3)]);
+        let [messages_area, input_area] = vertical.areas(chat_area);
         self.input_pane.render(
             frame,
             input_pane::RenderProps {
                 area: input_area,
-                border_color: "red",
+                border_color: Color::Red,
                 show_cursor: true,
             },
         );

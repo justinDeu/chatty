@@ -32,7 +32,7 @@ impl ComponentRender<RenderProps> for MessagesPane {
     fn render(&self, frame: &mut Frame, props: RenderProps) {
         let block = Block::new()
             .border_type(BorderType::Rounded)
-            .borders(Borders::LEFT | Borders::RIGHT)
+            .borders(Borders::ALL)
             .border_style(Style::default().fg(Color::White))
             .style(Style::default().bg(Color::Black))
             .title(self.name());

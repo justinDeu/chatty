@@ -17,6 +17,10 @@ use tokio::sync::{
 use tokio_stream::StreamExt;
 
 use super::panes::AppRouter;
+
+// Why did I have to use this here to get Component in scope for AppRouter::new?
+use crate::ui::components::Component;
+use crate::ui::components::ComponentRender;
 use crate::{
     state::{action::Action, State},
     Interrupted,
@@ -53,7 +57,6 @@ impl UiManager {
                 _ = ticker.tick() => (),
                 maybe_event = crossterm_events.next() => match maybe_event {
                     Some(Ok(Event::Key(key))) => {
-                        println!("Received key: {}", key.code);
                         router.handle_key_event(key);
                     },
                     None => break Ok(Interrupted::UserInt),
@@ -67,14 +70,12 @@ impl UiManager {
                 }
             }
 
-            /*
             if let Err(err) = terminal
-                .draw(|frame| app_router.render(frame, ()))
+                .draw(|frame| router.render(frame, ()))
                 .context("could not render to the terminal")
             {
                 break Err(err);
             }
-            */
         };
 
         // Restore the terminal to its original state
