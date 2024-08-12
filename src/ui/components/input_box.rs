@@ -130,6 +130,7 @@ impl ComponentRender<RenderProps> for InputBox {
             .block(
                 Block::default()
                     .borders(Borders::ALL)
+                    .border_type(ratatui::widgets::BorderType::Rounded)
                     .fg(props.border_color)
                     .title(props.title),
             );

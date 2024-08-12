@@ -11,10 +11,11 @@ mod messages_pane;
 use crate::ui::components::component::Component;
 use crate::ui::components::component::ComponentRender;
 
+#[derive(PartialEq, Eq)]
 enum ActivePane {
     Input,
     Messages,
-    Conversations,
+    Contacts,
 }
 
 struct Props {
@@ -34,7 +35,7 @@ impl AppRouter {
         match self.props.active_pane {
             ActivePane::Input => &self.input_pane,
             ActivePane::Messages => &self.messages_pane,
-            ActivePane::Conversations => &self.conversations_pane,
+            ActivePane::Contacts => &self.conversations_pane,
         }
     }
 
@@ -42,7 +43,7 @@ impl AppRouter {
         match self.props.active_pane {
             ActivePane::Input => &mut self.input_pane,
             ActivePane::Messages => &mut self.messages_pane,
-            ActivePane::Conversations => &mut self.conversations_pane,
+            ActivePane::Contacts => &mut self.conversations_pane,
         }
     }
 }
@@ -76,6 +77,26 @@ impl Component for AppRouter {
             KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                 let _ = self.action_sender.send(Action::Exit);
             }
+            KeyCode::Char('j') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                if self.props.active_pane == ActivePane::Messages {
+                    self.props.active_pane = ActivePane::Input;
+                }
+            }
+            KeyCode::Char('k') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                if self.props.active_pane == ActivePane::Input {
+                    self.props.active_pane = ActivePane::Messages;
+                }
+            }
+            KeyCode::Char('h') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                if self.props.active_pane == ActivePane::Contacts {
+                    self.props.active_pane = ActivePane::Messages;
+                }
+            }
+            KeyCode::Char('l') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                if self.props.active_pane != ActivePane::Contacts {
+                    self.props.active_pane = ActivePane::Contacts;
+                }
+            }
             _ => {}
         }
     }
@@ -87,24 +108,39 @@ impl ComponentRender<()> for AppRouter {
         let [chat_area, conversation_area] = horizontal.areas(frame.size());
         let vertical = Layout::vertical([Constraint::Fill(1), Constraint::Length(3)]);
         let [messages_area, input_area] = vertical.areas(chat_area);
+
         self.input_pane.render(
             frame,
             input_pane::RenderProps {
                 area: input_area,
-                border_color: Color::Red,
-                show_cursor: true,
+                border_color: if self.props.active_pane == ActivePane::Input {
+                    Color::LightRed
+                } else {
+                    Color::White
+                },
+                show_cursor: self.props.active_pane == ActivePane::Input,
             },
         );
         self.messages_pane.render(
             frame,
             messages_pane::RenderProps {
                 area: messages_area,
+                border_color: if self.props.active_pane == ActivePane::Messages {
+                    Color::LightRed
+                } else {
+                    Color::White
+                },
             },
         );
         self.conversations_pane.render(
             frame,
             conversations_pane::RenderProps {
                 area: conversation_area,
+                border_color: if self.props.active_pane == ActivePane::Contacts {
+                    Color::LightRed
+                } else {
+                    Color::White
+                },
             },
         );
     }

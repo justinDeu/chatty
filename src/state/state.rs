@@ -1,3 +1,5 @@
+use super::action::Action;
+
 #[derive(Debug, Clone)]
 pub struct Contact {
     pub name: String,

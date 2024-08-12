@@ -26,6 +26,7 @@ impl Component for MessagesPane {
 
 pub struct RenderProps {
     pub area: Rect,
+    pub border_color: Color,
 }
 
 impl ComponentRender<RenderProps> for MessagesPane {
@@ -33,7 +34,7 @@ impl ComponentRender<RenderProps> for MessagesPane {
         let block = Block::new()
             .border_type(BorderType::Rounded)
             .borders(Borders::ALL)
-            .border_style(Style::default().fg(Color::White))
+            .border_style(Style::default().fg(props.border_color))
             .style(Style::default().bg(Color::Black))
             .title(self.name());
 

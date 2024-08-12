@@ -37,7 +37,7 @@ impl StateStore {
             tokio::select! {
                 Some(action) = action_rx.recv() => match action {
                     Action::Exit => {
-                        let _ =terminator.terminate(Interrupted::UserInt);
+                        let _ = terminator.terminate(Interrupted::UserInt);
                         break Interrupted::UserInt;
                     },
                     _ => (),

@@ -8,8 +8,13 @@ use crate::ui::components::{
     Component, ComponentRender,
 };
 
+use super::ActivePane;
+
 pub struct InputPane {
+    state: State,
     action_tx: UnboundedSender<Action>,
+
+    // Why is this pub here?
     pub input_box: InputBox,
 }
 
@@ -18,6 +23,7 @@ pub struct InputPane {
 impl Component for InputPane {
     fn new(state: &State, action_tx: UnboundedSender<Action>) -> Self {
         Self {
+            state: state.clone(),
             action_tx: action_tx.clone(),
             input_box: InputBox::new(state, action_tx),
         }
