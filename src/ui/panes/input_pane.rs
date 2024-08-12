@@ -37,6 +37,8 @@ impl Component for InputPane {
         if key.kind != KeyEventKind::Press {
             return;
         }
+
+        self.input_box.handle_key_event(key);
     }
 }
 

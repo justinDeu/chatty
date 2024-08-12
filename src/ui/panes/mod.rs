@@ -73,8 +73,10 @@ impl Component for AppRouter {
             return;
         }
 
+        // Handle top-level key-binds regardless of active pane, otherwise send
+        // to the active pane
         match key.code {
-            KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+            KeyCode::Char('q') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                 let _ = self.action_sender.send(Action::Exit);
             }
             KeyCode::Char('j') if key.modifiers.contains(KeyModifiers::CONTROL) => {
@@ -97,7 +99,7 @@ impl Component for AppRouter {
                     self.props.active_pane = ActivePane::Contacts;
                 }
             }
-            _ => {}
+            _ => self.get_active_pane_component_mut().handle_key_event(key),
         }
     }
 }
