@@ -40,6 +40,9 @@ impl StateStore {
                         let _ = terminator.terminate(Interrupted::UserInt);
                         break Interrupted::UserInt;
                     },
+                    Action::SendMessage(msg) => {
+                        state.chat.messages.push(msg);
+                    },
                     _ => (),
                 },
                 Ok(interrupted) = interrupt_rx.recv() => {

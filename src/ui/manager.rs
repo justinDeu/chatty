@@ -63,7 +63,7 @@ impl UiManager {
                     _ => (),
                 },
                 Some(state) = state_rx.recv() => {
-                    println!("Received state");
+                    router = router.move_with_state(&state);
                 },
                 Ok(interrupted) = interrupt_rx.recv() => {
                     break Ok(interrupted);

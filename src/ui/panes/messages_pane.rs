@@ -6,19 +6,40 @@ use crate::state::{action::Action, State};
 
 use crate::ui::components::{Component, ComponentRender};
 
-pub struct MessagesPane {
+struct Props {
     messages: Vec<String>,
+}
+
+impl From<&State> for Props {
+    fn from(state: &State) -> Self {
+        Self {
+            messages: state.chat.messages.clone(),
+        }
+    }
+}
+
+pub struct MessagesPane {
+    props: Props,
 }
 
 impl Component for MessagesPane {
     fn new(state: &State, _action_tx: UnboundedSender<Action>) -> Self {
         Self {
-            messages: state.chat.messages.clone(),
+            props: Props::from(state),
         }
     }
 
     fn name(&self) -> &str {
         "Messages"
+    }
+
+    fn move_with_state(self, state: &State) -> Self
+    where
+        Self: Sized,
+    {
+        Self {
+            props: Props::from(state),
+        }
     }
 
     fn handle_key_event(&mut self, key: KeyEvent) {
@@ -35,7 +56,7 @@ pub struct RenderProps {
 
 impl ComponentRender<RenderProps> for MessagesPane {
     fn render(&self, frame: &mut Frame, props: RenderProps) {
-        let block = List::new(self.messages.clone()).block(
+        let block = List::new(self.props.messages.clone()).block(
             Block::bordered()
                 .title(self.name())
                 .border_type(BorderType::Rounded)

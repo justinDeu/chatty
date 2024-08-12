@@ -8,8 +8,6 @@ use crate::ui::components::{
     Component, ComponentRender,
 };
 
-use super::ActivePane;
-
 pub struct InputPane {
     state: State,
     action_tx: UnboundedSender<Action>,
@@ -31,6 +29,13 @@ impl Component for InputPane {
 
     fn name(&self) -> &str {
         "Message Input"
+    }
+
+    fn move_with_state(self, state: &State) -> Self
+    where
+        Self: Sized,
+    {
+        Self { ..self }
     }
 
     fn handle_key_event(&mut self, key: KeyEvent) {

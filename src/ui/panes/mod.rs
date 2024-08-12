@@ -68,6 +68,18 @@ impl Component for AppRouter {
         self.get_active_pane_component().name()
     }
 
+    fn move_with_state(self, state: &State) -> Self
+    where
+        Self: Sized,
+    {
+        Self {
+            input_pane: self.input_pane.move_with_state(state),
+            messages_pane: self.messages_pane.move_with_state(state),
+            conversations_pane: self.conversations_pane.move_with_state(state),
+            ..self
+        }
+    }
+
     fn handle_key_event(&mut self, key: KeyEvent) {
         if key.kind != KeyEventKind::Press {
             return;

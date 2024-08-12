@@ -12,6 +12,7 @@ use crate::state::{action::Action, State};
 use super::{Component, ComponentRender};
 
 pub struct InputBox {
+    action_tx: UnboundedSender<Action>,
     /// Current value of the input box
     text: String,
     /// Position of cursor in the editor area.
@@ -75,14 +76,20 @@ impl InputBox {
         }
     }
 
+    fn send_message(&mut self) {
+        let _ = self.action_tx.send(Action::SendMessage(self.text.clone()));
+        self.reset();
+    }
+
     fn clamp_cursor(&self, new_cursor_pos: usize) -> usize {
         new_cursor_pos.clamp(0, self.text.len())
     }
 }
 
 impl Component for InputBox {
-    fn new(_state: &State, _action_tx: UnboundedSender<Action>) -> Self {
+    fn new(_state: &State, action_tx: UnboundedSender<Action>) -> Self {
         Self {
+            action_tx: action_tx,
             //
             text: String::new(),
             cursor_position: 0,
@@ -91,6 +98,13 @@ impl Component for InputBox {
 
     fn name(&self) -> &str {
         "Input"
+    }
+
+    fn move_with_state(self, state: &State) -> Self
+    where
+        Self: Sized,
+    {
+        Self { ..self }
     }
 
     fn handle_key_event(&mut self, key: KeyEvent) {
@@ -110,6 +124,9 @@ impl Component for InputBox {
             }
             KeyCode::Right => {
                 self.move_cursor_right();
+            }
+            KeyCode::Enter => {
+                self.send_message();
             }
             _ => {}
         }
