@@ -6,11 +6,15 @@ use crate::state::{action::Action, State};
 
 use crate::ui::components::{Component, ComponentRender};
 
-pub struct MessagesPane {}
+pub struct MessagesPane {
+    messages: Vec<String>,
+}
 
 impl Component for MessagesPane {
-    fn new(_state: &State, _action_tx: UnboundedSender<Action>) -> Self {
-        Self {}
+    fn new(state: &State, _action_tx: UnboundedSender<Action>) -> Self {
+        Self {
+            messages: state.chat.messages.clone(),
+        }
     }
 
     fn name(&self) -> &str {
@@ -31,12 +35,12 @@ pub struct RenderProps {
 
 impl ComponentRender<RenderProps> for MessagesPane {
     fn render(&self, frame: &mut Frame, props: RenderProps) {
-        let block = Block::new()
-            .border_type(BorderType::Rounded)
-            .borders(Borders::ALL)
-            .border_style(Style::default().fg(props.border_color))
-            .style(Style::default().bg(Color::Black))
-            .title(self.name());
+        let block = List::new(self.messages.clone()).block(
+            Block::bordered()
+                .title(self.name())
+                .border_type(BorderType::Rounded)
+                .border_style(Style::default().fg(props.border_color)),
+        );
 
         frame.render_widget(block, props.area);
     }
