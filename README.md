@@ -15,7 +15,7 @@ to mimic the functionality (and also allow for testing).
 
 ## Architecture & Design
 
-The `[ratatui](https://ratatui.rs/)` crate is used for the TUI. The overall
+The [`ratatui`](https://ratatui.rs/) crate is used for the TUI. The overall
 architecture follows the [Flux](https://ratatui.rs/concepts/application-patterns/flux-architecture/)
 pattern and is heavily inspired by this [rust IRC client](https://github.com/Yengas/rust-chat-server/tree/main/tui)
 using both `ratatui` and the Flux pattern.
