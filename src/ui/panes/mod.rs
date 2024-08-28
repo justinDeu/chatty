@@ -4,9 +4,11 @@ use tokio::sync::mpsc::UnboundedSender;
 
 use crate::state::{action::Action, State};
 
-mod conversations_pane;
+mod conversations;
 mod input_pane;
 mod messages_pane;
+
+use self::conversations::conversations_pane;
 
 use crate::ui::components::component::Component;
 use crate::ui::components::component::ComponentRender;
