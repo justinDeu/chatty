@@ -41,7 +41,7 @@ impl Default for ConversationList {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-enum MessageDirection {
+pub enum MessageDirection {
     To,
     From
 }
@@ -51,7 +51,7 @@ pub struct Message {
     pub contact: Contact,
     pub content: String,
     pub timestamp: NaiveDateTime,
-    direction: MessageDirection
+    pub direction: MessageDirection
 }
 
 impl Message {
