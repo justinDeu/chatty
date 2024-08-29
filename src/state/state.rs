@@ -80,11 +80,11 @@ pub struct Chat {
 impl Chat {
     pub fn new(contact: Contact) -> Self {
         Self {
-            contact,
+            contact: contact.clone(),
             messages: vec![
-                String::from("hey"),
-                String::from("hi"),
-                String::from("hello"),
+                Message::new(String::from("hey"), NaiveDateTime::from_timestamp(1724895116, 0), None),
+                Message::new(String::from("hi"), NaiveDateTime::from_timestamp(1724895126, 0), Some(contact.clone())),
+                Message::new(String::from("hello"), NaiveDateTime::from_timestamp(1724895136, 0), Some(contact.clone())),
             ],
         }
     }
