@@ -1,6 +1,8 @@
+use chrono::{DateTime, NaiveDateTime};
+
 use super::action::Action;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Contact {
     pub name: String,
     pub phone: String,
@@ -14,6 +16,10 @@ impl Contact {
             phone,
             has_unread: false,
         }
+    }
+
+    fn eq(&self, other: &Contact) -> bool {
+        self.name == other.name && self.phone == other.name
     }
 }
 
@@ -34,10 +40,41 @@ impl Default for ConversationList {
     }
 }
 
+#[derive(Debug, PartialEq, Eq, Clone)]
+enum MessageDirection {
+    To,
+    From(Contact)
+}
+
+#[derive(Debug, Clone)]
+pub struct Message {
+    pub content: String,
+    pub timestamp: NaiveDateTime,
+    direction: MessageDirection
+}
+
+impl Message {
+    pub fn new(content: String, timestamp: NaiveDateTime, contact: Option<Contact>) -> Self {
+        let direction = match Some(contact) {
+            Some(c) => MessageDirection::From(c.expect("Should have a contact")),
+            None => MessageDirection::To
+        };
+        Self {
+            content,
+            timestamp,
+            direction
+        }
+    }
+
+    pub fn sent_by_me(self) -> bool {
+        self.direction == MessageDirection::To
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Chat {
     pub contact: Contact,
-    pub messages: Vec<String>,
+    pub messages: Vec<Message>,
 }
 
 impl Chat {
