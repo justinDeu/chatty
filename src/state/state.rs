@@ -1,4 +1,4 @@
-use chrono::{DateTime, NaiveDateTime};
+use chrono::{DateTime, NaiveDateTime, Utc};
 
 use super::action::Action;
 
@@ -43,23 +43,21 @@ impl Default for ConversationList {
 #[derive(Debug, PartialEq, Eq, Clone)]
 enum MessageDirection {
     To,
-    From(Contact)
+    From
 }
 
 #[derive(Debug, Clone)]
 pub struct Message {
+    pub contact: Contact,
     pub content: String,
     pub timestamp: NaiveDateTime,
     direction: MessageDirection
 }
 
 impl Message {
-    pub fn new(content: String, timestamp: NaiveDateTime, contact: Option<Contact>) -> Self {
-        let direction = match Some(contact) {
-            Some(c) => MessageDirection::From(c.expect("Should have a contact")),
-            None => MessageDirection::To
-        };
+    pub fn new(contact: Contact, content: String, timestamp: NaiveDateTime, direction: MessageDirection) -> Self {
         Self {
+            contact,
             content,
             timestamp,
             direction
@@ -82,11 +80,15 @@ impl Chat {
         Self {
             contact: contact.clone(),
             messages: vec![
-                Message::new(String::from("hey"), NaiveDateTime::from_timestamp(1724895116, 0), None),
-                Message::new(String::from("hi"), NaiveDateTime::from_timestamp(1724895126, 0), Some(contact.clone())),
-                Message::new(String::from("hello"), NaiveDateTime::from_timestamp(1724895136, 0), Some(contact.clone())),
+                Message::new(contact.clone(), String::from("hey"), NaiveDateTime::from_timestamp(1724895116, 0), MessageDirection::To),
+                Message::new(contact.clone(), String::from("hi"),  NaiveDateTime::from_timestamp(1724895126, 0), MessageDirection::From),
+                Message::new(contact.clone(), String::from("hello"), NaiveDateTime::from_timestamp(1724895136, 0), MessageDirection::From),
             ],
         }
+    }
+
+    pub fn send_msg(&mut self, msg: String) {
+        self.messages.push(Message::new(self.contact.clone(), msg, Utc::now().naive_utc(), MessageDirection::To));
     }
 }
 

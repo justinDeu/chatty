@@ -2,12 +2,13 @@ use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{prelude::*, widgets::*, Frame};
 use tokio::sync::mpsc::UnboundedSender;
 
+use crate::state::Message;
 use crate::state::{action::Action, State};
 
 use crate::ui::components::{Component, ComponentRender};
 
 struct Props {
-    messages: Vec<String>,
+    messages: Vec<Message>,
 }
 
 impl From<&State> for Props {
@@ -56,7 +57,7 @@ pub struct RenderProps {
 
 impl ComponentRender<RenderProps> for MessagesPane {
     fn render(&self, frame: &mut Frame, props: RenderProps) {
-        let block = List::new(self.props.messages.clone()).block(
+        let block = List::new(self.props.messages.iter().map(|x| x.content.clone())).block(
             Block::bordered()
                 .title(self.name())
                 .border_type(BorderType::Rounded)
