@@ -129,6 +129,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "crossterm 0.28.1",
+ "itertools",
  "ratatui",
  "tokio",
  "tokio-stream",

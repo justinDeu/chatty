@@ -1,8 +1,9 @@
 use chrono::{DateTime, NaiveDateTime, Utc};
 
 use super::action::Action;
+use super::backends::{MsgBackend, MockBackend};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Contact {
     pub name: String,
     pub phone: String,
@@ -87,23 +88,35 @@ impl Chat {
         }
     }
 
+    pub fn update(&self) {
+
+    }
+
     pub fn send_msg(&mut self, msg: String) {
         self.messages.push(Message::new(self.contact.clone(), msg, Utc::now().naive_utc(), MessageDirection::To));
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct State {
+pub struct State<T: MsgBackend> {
     pub chat: Chat,
     pub conversations: ConversationList,
+    backend: T
 }
 
-impl Default for State {
+impl<MockBackend> Default for State<MockBackend> {
     fn default() -> Self {
         let conv_list = ConversationList::default();
         Self {
             chat: Chat::new(conv_list.contacts[0].clone()),
             conversations: conv_list,
+            backend: MockBackend::default()
         }
+    }
+}
+
+impl State<'_> {
+    pub fn update(&self) {
+        self.chat.update();
     }
 }

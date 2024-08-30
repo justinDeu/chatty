@@ -35,6 +35,7 @@ impl StateStore {
 
         let result = loop {
             tokio::select! {
+                // Handle any actions that are received
                 Some(action) = action_rx.recv() => match action {
                     Action::Exit => {
                         let _ = terminator.terminate(Interrupted::UserInt);
@@ -45,10 +46,19 @@ impl StateStore {
                     },
                     _ => (),
                 },
+
+                // Tick timer updating state
+                _ = ticker.tick() => {
+                    state.update();
+                },
+
+                // Handle Interruptions
                 Ok(interrupted) = interrupt_rx.recv() => {
                     break interrupted;
                 }
             }
+
+            // Send state out
             self.state_tx.send(state.clone())?;
         };
 
