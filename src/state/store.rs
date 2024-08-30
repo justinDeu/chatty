@@ -41,7 +41,7 @@ impl StateStore {
                         break Interrupted::UserInt;
                     },
                     Action::SendMessage(msg) => {
-                        state.chat.messages.push(msg);
+                        state.chat.send_msg(msg);
                     },
                     _ => (),
                 },

@@ -2,12 +2,13 @@ use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{prelude::*, widgets::*, Frame};
 use tokio::sync::mpsc::UnboundedSender;
 
+use crate::state::{Message, MessageDirection};
 use crate::state::{action::Action, State};
 
 use crate::ui::components::{Component, ComponentRender};
 
 struct Props {
-    messages: Vec<String>,
+    messages: Vec<Message>,
 }
 
 impl From<&State> for Props {
@@ -56,11 +57,16 @@ pub struct RenderProps {
 
 impl ComponentRender<RenderProps> for MessagesPane {
     fn render(&self, frame: &mut Frame, props: RenderProps) {
-        let block = List::new(self.props.messages.clone()).block(
-            Block::bordered()
-                .title(self.name())
-                .border_type(BorderType::Rounded)
-                .border_style(Style::default().fg(props.border_color)),
+        let block = List::new(self.props.messages.iter().map(|x|
+                match x.direction {
+                    MessageDirection::To => ListItem::new(Text::from(x.content.clone()).alignment(Alignment::Right)),
+                    MessageDirection::From => ListItem::new(Text::from(x.content.clone()).alignment(Alignment::Left))
+                }
+            )).block(
+                Block::bordered()
+                    .title(self.name())
+                    .border_type(BorderType::Rounded)
+                    .border_style(Style::default().fg(props.border_color)),
         );
 
         frame.render_widget(block, props.area);
