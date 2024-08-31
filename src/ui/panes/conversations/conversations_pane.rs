@@ -8,14 +8,12 @@ use crate::ui::components::{Component, ComponentRender};
 
 struct Props {
     conversations: Vec<Contact>,
-    list_state: ListState,
 }
 
 impl From<&State> for Props {
     fn from(state: &State) -> Self {
         Props {
             conversations: state.conversations.contacts.clone(),
-            list_state: ListState::default(),
         }
     }
 }
@@ -23,6 +21,7 @@ impl From<&State> for Props {
 pub struct ConversationsPane {
     action_tx: UnboundedSender<Action>,
     props: Props,
+    list_state: ListState,
 }
 
 impl Component for ConversationsPane {
@@ -30,6 +29,7 @@ impl Component for ConversationsPane {
         Self {
             action_tx: action_tx.clone(),
             props: Props::from(state),
+            list_state: ListState::default(),
         }
     }
 
@@ -54,12 +54,21 @@ impl Component for ConversationsPane {
 
         match key.code {
             KeyCode::Char('j') => {
-                if self.props.list_state.offset() < self.props.conversations.len() {
-                    self.props.list_state.select_next();
+                if self.list_state.offset() < self.props.conversations.len() {
+                    self.list_state.select_next();
                 }
             }
             KeyCode::Char('k') => {
-                self.props.list_state.select_previous();
+                self.list_state.select_previous();
+            }
+            KeyCode::Enter  if self.list_state.selected().is_some() => {
+                let _ = self.action_tx.send(Action::FocusConversation(
+                    self.props.conversations[self
+                        .list_state
+                        .selected()
+                        .unwrap()]
+                    .clone(),
+                ));
             }
             _ => {}
         }
@@ -82,6 +91,6 @@ impl ComponentRender<RenderProps> for ConversationsPane {
             )
             .highlight_symbol(">")
             .highlight_spacing(HighlightSpacing::Always);
-        frame.render_stateful_widget(contacts, props.area, &mut self.props.list_state.clone());
+        frame.render_stateful_widget(contacts, props.area, &mut self.list_state.clone());
     }
 }

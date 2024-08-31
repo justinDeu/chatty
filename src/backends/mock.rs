@@ -14,19 +14,19 @@ impl Default for MockBackend {
             messages: vec![
                 Message::new(
                     Contact::new(String::from("Joe Smith"), String::from("111-222-3344")),
-                    String::from("hey"),
+                    String::from("hey from joe smith"),
                     NaiveDateTime::from_timestamp(1724895116, 0),
                     MessageDirection::From,
                 ),
                 Message::new(
                     Contact::new(String::from("Ben Boy"), String::from("123-456-7890")),
-                    String::from("hi"),
+                    String::from("hi it is benny boy"),
                     NaiveDateTime::from_timestamp(1724895126, 0),
                     MessageDirection::From,
                 ),
                 Message::new(
                     Contact::new(String::from("Becky Sue"), String::from("321-123-3354")),
-                    String::from("hello"),
+                    String::from("how do you do its becky sue"),
                     NaiveDateTime::from_timestamp(1724895136, 0),
                     MessageDirection::From,
                 ),

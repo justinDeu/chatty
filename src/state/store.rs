@@ -4,8 +4,8 @@ use tokio::sync::{
     mpsc::{self, UnboundedReceiver, UnboundedSender},
 };
 
-use crate::{state::MessageDirection, Interrupted, Terminator};
 use crate::backends::MsgBackend;
+use crate::{state::MessageDirection, Interrupted, Terminator};
 
 use super::{action::Action, Chat, ConversationList, Message, State};
 
@@ -28,11 +28,13 @@ impl StateStore {
         mut action_rx: UnboundedReceiver<Action>,
         mut interrupt_rx: broadcast::Receiver<Interrupted>,
     ) -> anyhow::Result<Interrupted> {
-
         let conversations = backend.get_recent_contacts();
         let msgs = backend.get_messages(&conversations[0], Some(100));
 
-        let mut state = State::new(Chat::new(conversations[0].clone(), msgs), ConversationList::new(conversations));
+        let mut state = State::new(
+            Chat::new(conversations[0].clone(), msgs),
+            ConversationList::new(conversations),
+        );
 
         self.state_tx.send(state.clone())?;
 
@@ -43,7 +45,7 @@ impl StateStore {
                     Action::Exit => {
                         let _ = terminator.terminate(Interrupted::UserInt);
                         break Interrupted::UserInt;
-                    },
+                    }
                     Action::SendMessage(msg) => {
                         backend.send_message(
                             Message::new(
@@ -53,7 +55,10 @@ impl StateStore {
                                 MessageDirection::To,
                             )
                         );
-                    },
+                    }
+                    Action::FocusConversation(contact) => {
+                        state.chat.contact = contact;
+                    }
                     //_ => (),
                 },
 
