@@ -54,9 +54,18 @@ impl Component for ConversationsPane {
 
         match key.code {
             KeyCode::Char('j') => {
-                if self.list_state.offset() < self.props.conversations.len() {
-                    self.list_state.select_next();
-                }
+                let i = match self.list_state.selected() {
+                    Some(i) => {
+                        if i + 1 < self.props.conversations.len() {
+                            i + 1
+                        } else {
+                            i
+                        }
+                    }
+                    None => 0,
+                };
+
+                self.list_state.select(Some(i));
             }
             KeyCode::Char('k') => {
                 self.list_state.select_previous();
