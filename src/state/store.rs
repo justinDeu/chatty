@@ -7,7 +7,7 @@ use tokio::sync::{
 use crate::{state::MessageDirection, Interrupted, Terminator};
 use crate::backends::MsgBackend;
 
-use super::{action::Action, State, Contact, Message};
+use super::{action::Action, Chat, ConversationList, Message, State};
 
 // TODO: Need to create State and update sender type
 pub struct StateStore {
@@ -29,10 +29,10 @@ impl StateStore {
         mut interrupt_rx: broadcast::Receiver<Interrupted>,
     ) -> anyhow::Result<Interrupted> {
 
-        let mut state = State::default();
+        let conversations = backend.get_recent_contacts();
+        let msgs = backend.get_messages(&conversations[0], Some(100));
 
-        // Update state from backend
-        state.chat.messages = backend.get_messages(&state.chat.contact, Some(100));
+        let mut state = State::new(Chat::new(conversations[0].clone(), msgs), ConversationList::new(conversations));
 
         self.state_tx.send(state.clone())?;
 

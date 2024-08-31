@@ -1,4 +1,4 @@
-use chrono::{NaiveDateTime, Utc};
+use chrono::{NaiveDateTime};
 
 #[derive(Debug, Hash, Clone, PartialEq, Eq)]
 pub struct Contact {
@@ -21,20 +21,15 @@ impl Contact {
     }
 }
 
+// TODO: Consider deleting this, what is it getting me?
 #[derive(Debug, Clone)]
 pub struct ConversationList {
     pub contacts: Vec<Contact>,
 }
 
-impl Default for ConversationList {
-    fn default() -> Self {
-        ConversationList {
-            contacts: vec![
-                Contact::new(String::from("Joe Smith"), String::from("111-222-3344")),
-                Contact::new(String::from("Ben Boy"), String::from("123-456-7890")),
-                Contact::new(String::from("Becky Sue"), String::from("321-123-3354")),
-            ],
-        }
+impl ConversationList {
+    pub fn new(contacts : Vec<Contact>) -> Self {
+        Self {contacts}
     }
 }
 
@@ -79,10 +74,9 @@ pub struct Chat {
 }
 
 impl Chat {
-    pub fn new(contact: Contact) -> Self {
+    pub fn new(contact: Contact, messages: Vec<Message>) -> Self {
         Self {
-            contact: contact.clone(),
-            messages: vec![],
+            contact, messages
         }
     }
 }
@@ -93,12 +87,8 @@ pub struct State {
     pub conversations: ConversationList,
 }
 
-impl Default for State {
-    fn default() -> Self {
-        let conv_list = ConversationList::default();
-        Self {
-            chat: Chat::new(conv_list.contacts[0].clone()),
-            conversations: conv_list,
-        }
+impl State {
+    pub fn new(chat: Chat, conversations: ConversationList) -> Self {
+        Self {chat, conversations}
     }
 }
