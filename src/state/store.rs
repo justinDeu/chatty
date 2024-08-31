@@ -1,13 +1,13 @@
-use std::time::Duration;
-
+use chrono::NaiveDateTime;
 use tokio::sync::{
     broadcast,
     mpsc::{self, UnboundedReceiver, UnboundedSender},
 };
 
-use crate::{Interrupted, Terminator};
+use crate::{state::MessageDirection, Interrupted, Terminator};
+use crate::backends::MsgBackend;
 
-use super::{action::Action, State};
+use super::{action::Action, State, Contact, Message};
 
 // TODO: Need to create State and update sender type
 pub struct StateStore {
@@ -24,31 +24,50 @@ impl StateStore {
     pub async fn main_loop(
         self,
         mut terminator: Terminator,
+        mut backend: impl MsgBackend,
         mut action_rx: UnboundedReceiver<Action>,
         mut interrupt_rx: broadcast::Receiver<Interrupted>,
     ) -> anyhow::Result<Interrupted> {
+
         let mut state = State::default();
+
+        // Update state from backend
+        state.chat.messages = backend.get_messages(&state.chat.contact, Some(100));
 
         self.state_tx.send(state.clone())?;
 
-        let mut ticker = tokio::time::interval(Duration::from_secs(1));
-
         let result = loop {
             tokio::select! {
+                // Handle any actions that are received
                 Some(action) = action_rx.recv() => match action {
                     Action::Exit => {
                         let _ = terminator.terminate(Interrupted::UserInt);
                         break Interrupted::UserInt;
                     },
                     Action::SendMessage(msg) => {
-                        state.chat.send_msg(msg);
+                        backend.send_message(
+                            Message::new(
+                                state.chat.contact.clone(),
+                                msg,
+                                NaiveDateTime::from_timestamp(1724895116, 0),
+                                MessageDirection::To,
+                            )
+                        );
                     },
-                    _ => (),
+                    //_ => (),
                 },
+
+
+                // Handle Interruptions
                 Ok(interrupted) = interrupt_rx.recv() => {
                     break interrupted;
                 }
             }
+
+            // Update state from backend
+            state.chat.messages = backend.get_messages(&state.chat.contact, Some(100));
+
+            // Send state out
             self.state_tx.send(state.clone())?;
         };
 

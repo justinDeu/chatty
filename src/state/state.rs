@@ -1,8 +1,6 @@
-use chrono::{DateTime, NaiveDateTime, Utc};
+use chrono::{NaiveDateTime, Utc};
 
-use super::action::Action;
-
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Hash, Clone, PartialEq, Eq)]
 pub struct Contact {
     pub name: String,
     pub phone: String,
@@ -43,7 +41,7 @@ impl Default for ConversationList {
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum MessageDirection {
     To,
-    From
+    From,
 }
 
 #[derive(Debug, Clone)]
@@ -51,16 +49,21 @@ pub struct Message {
     pub contact: Contact,
     pub content: String,
     pub timestamp: NaiveDateTime,
-    pub direction: MessageDirection
+    pub direction: MessageDirection,
 }
 
 impl Message {
-    pub fn new(contact: Contact, content: String, timestamp: NaiveDateTime, direction: MessageDirection) -> Self {
+    pub fn new(
+        contact: Contact,
+        content: String,
+        timestamp: NaiveDateTime,
+        direction: MessageDirection,
+    ) -> Self {
         Self {
             contact,
             content,
             timestamp,
-            direction
+            direction,
         }
     }
 
@@ -79,16 +82,8 @@ impl Chat {
     pub fn new(contact: Contact) -> Self {
         Self {
             contact: contact.clone(),
-            messages: vec![
-                Message::new(contact.clone(), String::from("hey"), NaiveDateTime::from_timestamp(1724895116, 0), MessageDirection::To),
-                Message::new(contact.clone(), String::from("hi"),  NaiveDateTime::from_timestamp(1724895126, 0), MessageDirection::From),
-                Message::new(contact.clone(), String::from("hello"), NaiveDateTime::from_timestamp(1724895136, 0), MessageDirection::From),
-            ],
+            messages: vec![],
         }
-    }
-
-    pub fn send_msg(&mut self, msg: String) {
-        self.messages.push(Message::new(self.contact.clone(), msg, Utc::now().naive_utc(), MessageDirection::To));
     }
 }
 
