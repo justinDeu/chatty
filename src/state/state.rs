@@ -1,8 +1,6 @@
-use chrono::{DateTime, NaiveDateTime, Utc};
+use chrono::{NaiveDateTime};
 
-use super::action::Action;
-
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Hash, Clone, PartialEq, Eq)]
 pub struct Contact {
     pub name: String,
     pub phone: String,
@@ -23,27 +21,22 @@ impl Contact {
     }
 }
 
+// TODO: Consider deleting this, what is it getting me?
 #[derive(Debug, Clone)]
 pub struct ConversationList {
     pub contacts: Vec<Contact>,
 }
 
-impl Default for ConversationList {
-    fn default() -> Self {
-        ConversationList {
-            contacts: vec![
-                Contact::new(String::from("Joe Smith"), String::from("111-222-3344")),
-                Contact::new(String::from("Ben Boy"), String::from("123-456-7890")),
-                Contact::new(String::from("Becky Sue"), String::from("321-123-3354")),
-            ],
-        }
+impl ConversationList {
+    pub fn new(contacts : Vec<Contact>) -> Self {
+        Self {contacts}
     }
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum MessageDirection {
     To,
-    From
+    From,
 }
 
 #[derive(Debug, Clone)]
@@ -51,16 +44,21 @@ pub struct Message {
     pub contact: Contact,
     pub content: String,
     pub timestamp: NaiveDateTime,
-    pub direction: MessageDirection
+    pub direction: MessageDirection,
 }
 
 impl Message {
-    pub fn new(contact: Contact, content: String, timestamp: NaiveDateTime, direction: MessageDirection) -> Self {
+    pub fn new(
+        contact: Contact,
+        content: String,
+        timestamp: NaiveDateTime,
+        direction: MessageDirection,
+    ) -> Self {
         Self {
             contact,
             content,
             timestamp,
-            direction
+            direction,
         }
     }
 
@@ -76,19 +74,10 @@ pub struct Chat {
 }
 
 impl Chat {
-    pub fn new(contact: Contact) -> Self {
+    pub fn new(contact: Contact, messages: Vec<Message>) -> Self {
         Self {
-            contact: contact.clone(),
-            messages: vec![
-                Message::new(contact.clone(), String::from("hey"), NaiveDateTime::from_timestamp(1724895116, 0), MessageDirection::To),
-                Message::new(contact.clone(), String::from("hi"),  NaiveDateTime::from_timestamp(1724895126, 0), MessageDirection::From),
-                Message::new(contact.clone(), String::from("hello"), NaiveDateTime::from_timestamp(1724895136, 0), MessageDirection::From),
-            ],
+            contact, messages
         }
-    }
-
-    pub fn send_msg(&mut self, msg: String) {
-        self.messages.push(Message::new(self.contact.clone(), msg, Utc::now().naive_utc(), MessageDirection::To));
     }
 }
 
@@ -98,12 +87,8 @@ pub struct State {
     pub conversations: ConversationList,
 }
 
-impl Default for State {
-    fn default() -> Self {
-        let conv_list = ConversationList::default();
-        Self {
-            chat: Chat::new(conv_list.contacts[0].clone()),
-            conversations: conv_list,
-        }
+impl State {
+    pub fn new(chat: Chat, conversations: ConversationList) -> Self {
+        Self {chat, conversations}
     }
 }
