@@ -1,8 +1,10 @@
+use conversations::conversations_pane::ConversationsPane;
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
+use messages_pane::MessagesPane;
 use ratatui::{prelude::*, Frame};
 use tokio::sync::mpsc::UnboundedSender;
 
-use crate::state::{action::Action, State};
+use crate::state::{action::Action, backends::MsgBackend, State};
 
 mod conversations;
 mod input_pane;
@@ -24,16 +26,22 @@ struct Props {
     active_pane: ActivePane,
 }
 
-pub struct AppRouter {
+/*
+ * Just more propagation
+ */
+pub struct AppRouter<T: MsgBackend> {
     props: Props,
     action_sender: UnboundedSender<Action>,
-    input_pane: input_pane::InputPane,
+    input_pane: input_pane::InputPane<T>,
     messages_pane: messages_pane::MessagesPane,
     conversations_pane: conversations_pane::ConversationsPane,
 }
 
-impl AppRouter {
-    fn get_active_pane_component(&self) -> &dyn Component {
+/*
+ * Just more propagation
+ */
+impl<T: MsgBackend> AppRouter<T> {
+    fn get_active_pane_component(&self) -> &dyn Component<T> {
         match self.props.active_pane {
             ActivePane::Input => &self.input_pane,
             ActivePane::Messages => &self.messages_pane,
@@ -41,7 +49,7 @@ impl AppRouter {
         }
     }
 
-    fn get_active_pane_component_mut(&mut self) -> &mut dyn Component {
+    fn get_active_pane_component_mut(&mut self) -> &mut dyn Component<T> {
         match self.props.active_pane {
             ActivePane::Input => &mut self.input_pane,
             ActivePane::Messages => &mut self.messages_pane,
@@ -50,8 +58,11 @@ impl AppRouter {
     }
 }
 
-impl Component for AppRouter {
-    fn new(state: &State, action_sender: UnboundedSender<Action>) -> Self {
+/*
+ * Just more propagation
+ */
+impl<T: MsgBackend> Component<T> for AppRouter<T> {
+    fn new(state: &State<T>, action_sender: UnboundedSender<Action>) -> Self {
         AppRouter {
             props: Props {
                 active_pane: ActivePane::Input,
@@ -70,7 +81,7 @@ impl Component for AppRouter {
         self.get_active_pane_component().name()
     }
 
-    fn move_with_state(self, state: &State) -> Self
+    fn move_with_state(self, state: &State<T>) -> Self
     where
         Self: Sized,
     {
@@ -118,7 +129,12 @@ impl Component for AppRouter {
     }
 }
 
-impl ComponentRender<()> for AppRouter {
+/*
+ * Ok, this is where things get interesting. The major issue was that there are multiple instances
+ * of the trait implementation for `RenderProps`. The two real changes in this function
+ * explicitly specify which implementation we want.
+ */
+impl<T: MsgBackend> ComponentRender<(), T> for AppRouter<T> {
     fn render(&self, frame: &mut Frame, _props: ()) {
         let horizontal = Layout::horizontal([Constraint::Percentage(80), Constraint::Fill(1)]);
         let [chat_area, conversation_area] = horizontal.areas(frame.size());
@@ -137,7 +153,8 @@ impl ComponentRender<()> for AppRouter {
                 show_cursor: self.props.active_pane == ActivePane::Input,
             },
         );
-        self.messages_pane.render(
+        <MessagesPane as ComponentRender<messages_pane::RenderProps, T>>::render(
+            &self.messages_pane,
             frame,
             messages_pane::RenderProps {
                 area: messages_area,
@@ -148,7 +165,8 @@ impl ComponentRender<()> for AppRouter {
                 },
             },
         );
-        self.conversations_pane.render(
+        <ConversationsPane as ComponentRender<conversations_pane::RenderProps, T>>::render(
+            &self.conversations_pane,
             frame,
             conversations_pane::RenderProps {
                 area: conversation_area,

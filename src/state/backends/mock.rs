@@ -4,6 +4,10 @@ use itertools::Itertools;
 use super::MsgBackend;
 use crate::state::{Contact, Message, MessageDirection};
 
+/*
+ * Same as the `MacBackend`
+ */
+#[derive(Clone)]
 pub struct MockBackend {
     messages: Vec<Message>,
 }
@@ -41,10 +45,18 @@ impl MsgBackend for MockBackend {
     }
 
     fn get_messages(&self, contact: Contact, _n: Option<u8>) -> Vec<Message> {
-        self.messages.iter().filter(|x| contact.eq(&x.contact)).cloned().collect()
+        self.messages
+            .iter()
+            .filter(|x| contact.eq(&x.contact))
+            .cloned()
+            .collect()
     }
 
     fn get_recent_contacts(&self) -> Vec<Contact> {
-        self.messages.iter().unique_by(|x| &x.contact).map(|x| x.contact).collect()
+        self.messages
+            .iter()
+            .unique_by(|x| &x.contact)
+            .map(|x| x.contact.clone())
+            .collect()
     }
 }

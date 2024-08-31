@@ -2,14 +2,17 @@ use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{prelude::*, widgets::*, Frame};
 use tokio::sync::mpsc::UnboundedSender;
 
-use crate::state::{action::Action, State};
+use crate::state::{action::Action, backends::MsgBackend, State};
 use crate::ui::components::{
     input_box::{self, InputBox},
     Component, ComponentRender,
 };
 
-pub struct InputPane {
-    state: State,
+/*
+ * Just more propagation
+ */
+pub struct InputPane<T: MsgBackend> {
+    state: State<T>,
     action_tx: UnboundedSender<Action>,
 
     // Why is this pub here?
@@ -18,8 +21,11 @@ pub struct InputPane {
 
 // TODO: Implement sending message here, dispatch action
 
-impl Component for InputPane {
-    fn new(state: &State, action_tx: UnboundedSender<Action>) -> Self {
+/*
+ * Just more propagation
+ */
+impl<T: MsgBackend> Component<T> for InputPane<T> {
+    fn new(state: &State<T>, action_tx: UnboundedSender<Action>) -> Self {
         Self {
             state: state.clone(),
             action_tx: action_tx.clone(),
@@ -31,7 +37,7 @@ impl Component for InputPane {
         "Message Input"
     }
 
-    fn move_with_state(self, state: &State) -> Self
+    fn move_with_state(self, state: &State<T>) -> Self
     where
         Self: Sized,
     {
@@ -43,7 +49,11 @@ impl Component for InputPane {
             return;
         }
 
-        self.input_box.handle_key_event(key);
+        /*
+         * This is another one of those cases where you need to be very explicit about which trait
+         * method you are calling
+         */
+        <InputBox as Component<T>>::handle_key_event(&mut self.input_box, key);
     }
 }
 
@@ -53,9 +63,13 @@ pub struct RenderProps {
     pub show_cursor: bool,
 }
 
-impl ComponentRender<RenderProps> for InputPane {
+impl<T: MsgBackend> ComponentRender<RenderProps, T> for InputPane<T> {
     fn render(&self, frame: &mut Frame, props: RenderProps) {
-        self.input_box.render(
+        /*
+         * Again, making the trait function explicit
+         */
+        <InputBox as ComponentRender<input_box::RenderProps, T>>::render(
+            &self.input_box,
             frame,
             input_box::RenderProps {
                 title: "Message Input".into(),
@@ -63,6 +77,6 @@ impl ComponentRender<RenderProps> for InputPane {
                 border_color: props.border_color,
                 show_cursor: props.show_cursor,
             },
-        )
+        );
     }
 }

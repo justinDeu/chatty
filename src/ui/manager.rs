@@ -19,8 +19,8 @@ use tokio_stream::StreamExt;
 use super::panes::AppRouter;
 
 // Why did I have to use this here to get Component in scope for AppRouter::new?
-use crate::ui::components::Component;
 use crate::ui::components::ComponentRender;
+use crate::{state::backends::MsgBackend, ui::components::Component};
 use crate::{
     state::{action::Action, State},
     Interrupted,
@@ -38,9 +38,12 @@ impl UiManager {
         (Self { action_tx }, action_rx)
     }
 
-    pub async fn main_loop(
+    /*
+     * Just more propagation
+     */
+    pub async fn main_loop<T: MsgBackend>(
         self,
-        mut state_rx: UnboundedReceiver<State>,
+        mut state_rx: UnboundedReceiver<State<T>>,
         mut interrupt_rx: broadcast::Receiver<Interrupted>,
     ) -> anyhow::Result<Interrupted> {
         let mut router = {

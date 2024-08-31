@@ -7,28 +7,37 @@ use tokio::sync::{
 
 use crate::{Interrupted, Terminator};
 
-use super::{action::Action, State};
+use super::{action::Action, backends::MsgBackend, State};
 
 // TODO: Need to create State and update sender type
-pub struct StateStore {
-    state_tx: UnboundedSender<State>,
+pub struct StateStore<T: MsgBackend> {
+    state_tx: UnboundedSender<State<T>>,
 }
 
-impl StateStore {
-    pub fn new() -> (Self, UnboundedReceiver<State>) {
-        let (state_tx, state_rx) = mpsc::unbounded_channel::<State>();
+/*
+ * Beyond just adding the normal trait bound stuff, I had to add the static lifetime. This is
+ * necessary since the `main_loop` *must* have a known address, but with generics (and
+ * subsequently, monomorphization) the compiler will place the function pointer literally anywhere
+ */
+impl<T: MsgBackend + 'static> StateStore<T> {
+    pub fn new() -> (Self, UnboundedReceiver<State<T>>) {
+        let (state_tx, state_rx) = mpsc::unbounded_channel::<State<T>>();
 
         (StateStore { state_tx }, state_rx)
     }
 
+    /*
+     * Fun fact, it is not possible to implement the `Default` trait generically. Therefore, I
+     * added the `state` to the function signature at the highest point (main.rs) where it can be
+     * initialized using the `type Backend = ...` stuff
+     */
     pub async fn main_loop(
         self,
+        mut state: State<T>,
         mut terminator: Terminator,
         mut action_rx: UnboundedReceiver<Action>,
         mut interrupt_rx: broadcast::Receiver<Interrupted>,
     ) -> anyhow::Result<Interrupted> {
-        let mut state = State::default();
-
         self.state_tx.send(state.clone())?;
 
         let mut ticker = tokio::time::interval(Duration::from_secs(1));
@@ -44,7 +53,7 @@ impl StateStore {
                     Action::SendMessage(msg) => {
                         state.chat.send_msg(msg);
                     },
-                    _ => (),
+                    //_ => unreachable!(),
                 },
 
                 // Tick timer updating state

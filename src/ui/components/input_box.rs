@@ -7,7 +7,7 @@ use ratatui::{
 };
 use tokio::sync::mpsc::UnboundedSender;
 
-use crate::state::{action::Action, State};
+use crate::state::{action::Action, backends::MsgBackend, State};
 
 use super::{Component, ComponentRender};
 
@@ -86,8 +86,8 @@ impl InputBox {
     }
 }
 
-impl Component for InputBox {
-    fn new(_state: &State, action_tx: UnboundedSender<Action>) -> Self {
+impl<T: MsgBackend> Component<T> for InputBox {
+    fn new(_state: &State<T>, action_tx: UnboundedSender<Action>) -> Self {
         Self {
             action_tx: action_tx,
             //
@@ -100,7 +100,7 @@ impl Component for InputBox {
         "Input"
     }
 
-    fn move_with_state(self, state: &State) -> Self
+    fn move_with_state(self, state: &State<T>) -> Self
     where
         Self: Sized,
     {
@@ -140,7 +140,10 @@ pub struct RenderProps {
     pub show_cursor: bool,
 }
 
-impl ComponentRender<RenderProps> for InputBox {
+/*
+ * Just more propagation
+ */
+impl<T: MsgBackend> ComponentRender<RenderProps, T> for InputBox {
     fn render(&self, frame: &mut Frame, props: RenderProps) {
         let input = Paragraph::new(self.text.as_str())
             .style(Style::default().fg(Color::Yellow))

@@ -1,22 +1,37 @@
 use chrono::NaiveDateTime;
 
-use crate::state::{Contact, Message};
 use super::MsgBackend;
+use crate::state::{Contact, Message, MessageDirection};
 
-pub struct MacBackend {
-
-}
+/*
+ * Added the Clone derivation since it is now a part of the `MsgBackend` trait
+ */
+#[derive(Clone)]
+pub struct MacBackend {}
 
 impl MsgBackend for MacBackend {
-    fn send_message(&mut self, message: Message) {
-
-    }
+    fn send_message(&mut self, message: Message) {}
 
     fn get_messages(&self, contact: Contact, n: Option<u8>) -> Vec<Message> {
         vec![
-            Message::new(contact.clone(), String::from("hey"), NaiveDateTime::from_timestamp(1724895116, 0), MessageDirection::To),
-            Message::new(contact.clone(), String::from("hi"),  NaiveDateTime::from_timestamp(1724895126, 0), MessageDirection::From),
-            Message::new(contact.clone(), String::from("hello"), NaiveDateTime::from_timestamp(1724895136, 0), MessageDirection::From),
+            Message::new(
+                contact.clone(),
+                String::from("hey"),
+                NaiveDateTime::from_timestamp(1724895116, 0),
+                MessageDirection::To,
+            ),
+            Message::new(
+                contact.clone(),
+                String::from("hi"),
+                NaiveDateTime::from_timestamp(1724895126, 0),
+                MessageDirection::From,
+            ),
+            Message::new(
+                contact.clone(),
+                String::from("hello"),
+                NaiveDateTime::from_timestamp(1724895136, 0),
+                MessageDirection::From,
+            ),
         ]
     }
 

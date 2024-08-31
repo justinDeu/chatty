@@ -2,6 +2,7 @@ use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
 use ratatui::{prelude::*, widgets::*, Frame};
 use tokio::sync::mpsc::UnboundedSender;
 
+use crate::state::backends::MsgBackend;
 use crate::state::Contact;
 use crate::state::{action::Action, State};
 use crate::ui::components::{Component, ComponentRender};
@@ -11,8 +12,8 @@ struct Props {
     list_state: ListState,
 }
 
-impl From<&State> for Props {
-    fn from(state: &State) -> Self {
+impl<T: MsgBackend> From<&State<T>> for Props {
+    fn from(state: &State<T>) -> Self {
         Props {
             conversations: state.conversations.contacts.clone(),
             list_state: ListState::default(),
@@ -25,8 +26,8 @@ pub struct ConversationsPane {
     props: Props,
 }
 
-impl Component for ConversationsPane {
-    fn new(state: &State, action_tx: UnboundedSender<Action>) -> Self {
+impl<T: MsgBackend> Component<T> for ConversationsPane {
+    fn new(state: &State<T>, action_tx: UnboundedSender<Action>) -> Self {
         Self {
             action_tx: action_tx.clone(),
             props: Props::from(state),
@@ -37,7 +38,7 @@ impl Component for ConversationsPane {
         "Conversations"
     }
 
-    fn move_with_state(self, state: &State) -> Self
+    fn move_with_state(self, state: &State<T>) -> Self
     where
         Self: Sized,
     {
@@ -71,12 +72,12 @@ pub struct RenderProps {
     pub border_color: Color,
 }
 
-impl ComponentRender<RenderProps> for ConversationsPane {
+impl<T: MsgBackend> ComponentRender<RenderProps, T> for ConversationsPane {
     fn render(&self, frame: &mut Frame, props: RenderProps) {
         let contacts = List::new(self.props.conversations.iter().map(|x| x.name.clone()))
             .block(
                 Block::bordered()
-                    .title(self.name())
+                    .title(<ConversationsPane as Component<T>>::name(self))
                     .border_type(BorderType::Rounded)
                     .border_style(Style::default().fg(props.border_color)),
             )

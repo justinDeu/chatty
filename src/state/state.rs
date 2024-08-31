@@ -1,9 +1,9 @@
 use chrono::{DateTime, NaiveDateTime, Utc};
 
 use super::action::Action;
-use super::backends::{MsgBackend, MockBackend};
+use super::backends::{MockBackend, MsgBackend};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Contact {
     pub name: String,
     pub phone: String,
@@ -44,7 +44,7 @@ impl Default for ConversationList {
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum MessageDirection {
     To,
-    From
+    From,
 }
 
 #[derive(Debug, Clone)]
@@ -52,16 +52,21 @@ pub struct Message {
     pub contact: Contact,
     pub content: String,
     pub timestamp: NaiveDateTime,
-    pub direction: MessageDirection
+    pub direction: MessageDirection,
 }
 
 impl Message {
-    pub fn new(contact: Contact, content: String, timestamp: NaiveDateTime, direction: MessageDirection) -> Self {
+    pub fn new(
+        contact: Contact,
+        content: String,
+        timestamp: NaiveDateTime,
+        direction: MessageDirection,
+    ) -> Self {
         Self {
             contact,
             content,
             timestamp,
-            direction
+            direction,
         }
     }
 
@@ -81,41 +86,63 @@ impl Chat {
         Self {
             contact: contact.clone(),
             messages: vec![
-                Message::new(contact.clone(), String::from("hey"), NaiveDateTime::from_timestamp(1724895116, 0), MessageDirection::To),
-                Message::new(contact.clone(), String::from("hi"),  NaiveDateTime::from_timestamp(1724895126, 0), MessageDirection::From),
-                Message::new(contact.clone(), String::from("hello"), NaiveDateTime::from_timestamp(1724895136, 0), MessageDirection::From),
+                Message::new(
+                    contact.clone(),
+                    String::from("hey"),
+                    NaiveDateTime::from_timestamp(1724895116, 0),
+                    MessageDirection::To,
+                ),
+                Message::new(
+                    contact.clone(),
+                    String::from("hi"),
+                    NaiveDateTime::from_timestamp(1724895126, 0),
+                    MessageDirection::From,
+                ),
+                Message::new(
+                    contact.clone(),
+                    String::from("hello"),
+                    NaiveDateTime::from_timestamp(1724895136, 0),
+                    MessageDirection::From,
+                ),
             ],
         }
     }
 
-    pub fn update(&self) {
-
-    }
+    pub fn update(&self) {}
 
     pub fn send_msg(&mut self, msg: String) {
-        self.messages.push(Message::new(self.contact.clone(), msg, Utc::now().naive_utc(), MessageDirection::To));
+        self.messages.push(Message::new(
+            self.contact.clone(),
+            msg,
+            Utc::now().naive_utc(),
+            MessageDirection::To,
+        ));
     }
 }
 
+/*
+ * You had already added this generic, but that now requires you to put that trait bound everywhere
+ * `State` is used, including downstream types.
+ */
 #[derive(Debug, Clone)]
 pub struct State<T: MsgBackend> {
     pub chat: Chat,
     pub conversations: ConversationList,
-    backend: T
+    backend: T,
 }
 
-impl<MockBackend> Default for State<MockBackend> {
+impl Default for State<MockBackend> {
     fn default() -> Self {
         let conv_list = ConversationList::default();
         Self {
             chat: Chat::new(conv_list.contacts[0].clone()),
             conversations: conv_list,
-            backend: MockBackend::default()
+            backend: MockBackend::default(),
         }
     }
 }
 
-impl State<'_> {
+impl<T: MsgBackend> State<T> {
     pub fn update(&self) {
         self.chat.update();
     }
