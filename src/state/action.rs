@@ -1,8 +1,8 @@
-use super::Contact;
+use super::{Contact, Message};
 
 #[derive(Debug, Clone)]
 pub enum Action {
     Exit,
-    SendMessage(String),
+    SendMessage(Message),
     FocusConversation(Contact),
 }

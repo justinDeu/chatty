@@ -48,12 +48,7 @@ impl StateStore {
                     }
                     Action::SendMessage(msg) => {
                         backend.send_message(
-                            Message::new(
-                                state.chat.contact.clone(),
-                                msg,
-                                NaiveDateTime::from_timestamp(1724895116, 0),
-                                MessageDirection::To,
-                            )
+                            msg
                         );
                     }
                     Action::FocusConversation(contact) => {
