@@ -16,7 +16,7 @@ use tokio::sync::{
 };
 use tokio_stream::StreamExt;
 
-use super::panes::AppRouter;
+use super::router::AppRouter;
 
 // Why did I have to use this here to get Component in scope for AppRouter::new?
 use crate::ui::components::Component;

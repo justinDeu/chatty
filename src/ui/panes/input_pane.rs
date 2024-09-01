@@ -1,5 +1,5 @@
-use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
-use ratatui::{prelude::*, widgets::*, Frame};
+use crossterm::event::{KeyEvent, KeyEventKind};
+use ratatui::{prelude::*, Frame};
 use tokio::sync::mpsc::UnboundedSender;
 
 use crate::state::{action::Action, State};
@@ -8,21 +8,26 @@ use crate::ui::components::{
     Component, ComponentRender,
 };
 
-pub struct InputPane {
-    state: State,
-    action_tx: UnboundedSender<Action>,
+use super::Pane;
 
-    // Why is this pub here?
+pub struct InputPane {
+    _state: State,
+    _action_tx: UnboundedSender<Action>,
+
+    // TODO: Why is this pub here?
     pub input_box: InputBox,
 }
 
-// TODO: Implement sending message here, dispatch action
+impl Pane for InputPane {
+    // Doesn't have to override anything
+}
+
 
 impl Component for InputPane {
     fn new(state: &State, action_tx: UnboundedSender<Action>) -> Self {
         Self {
-            state: state.clone(),
-            action_tx: action_tx.clone(),
+            _state: state.clone(),
+            _action_tx: action_tx.clone(),
             input_box: InputBox::new(state, action_tx),
         }
     }
@@ -31,7 +36,7 @@ impl Component for InputPane {
         "Message Input"
     }
 
-    fn move_with_state(self, state: &State) -> Self
+    fn move_with_state(self, _state: &State) -> Self
     where
         Self: Sized,
     {
