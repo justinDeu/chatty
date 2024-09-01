@@ -4,7 +4,7 @@ use tokio::sync::mpsc::UnboundedSender;
 
 use crate::state::{action::Action, State};
 
-use super::panes::{input_pane, messages_pane};
+use super::panes::{input_pane, messages_pane, Pane};
 use super::panes::conversations::conversations_pane;
 
 use crate::ui::components::component::Component;
@@ -30,7 +30,7 @@ pub struct AppRouter {
 }
 
 impl AppRouter {
-    fn get_active_pane_component(&self) -> &dyn Component {
+    fn get_active_pane(&self) -> &dyn Pane {
         match self.props.active_pane {
             ActivePane::Input => &self.input_pane,
             ActivePane::Messages => &self.messages_pane,
@@ -38,12 +38,22 @@ impl AppRouter {
         }
     }
 
-    fn get_active_pane_component_mut(&mut self) -> &mut dyn Component {
+    fn get_active_pane_mut(&mut self) -> &mut dyn Pane {
         match self.props.active_pane {
             ActivePane::Input => &mut self.input_pane,
             ActivePane::Messages => &mut self.messages_pane,
             ActivePane::Contacts => &mut self.conversations_pane,
         }
+    }
+
+    fn focus(&mut self, pane: ActivePane) {
+        if self.props.active_pane == pane {
+            return;
+        }
+
+        self.get_active_pane_mut().unfocus();
+        self.props.active_pane = pane;
+        self.get_active_pane_mut().focus();
     }
 }
 
@@ -64,7 +74,7 @@ impl Component for AppRouter {
     }
 
     fn name(&self) -> &str {
-        self.get_active_pane_component().name()
+        self.get_active_pane().name()
     }
 
     fn move_with_state(self, state: &State) -> Self
@@ -92,25 +102,25 @@ impl Component for AppRouter {
             }
             KeyCode::Char('j') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                 if self.props.active_pane == ActivePane::Messages {
-                    self.props.active_pane = ActivePane::Input;
+                    self.focus(ActivePane::Input);
                 }
             }
             KeyCode::Char('k') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                 if self.props.active_pane == ActivePane::Input {
-                    self.props.active_pane = ActivePane::Messages;
+                    self.focus(ActivePane::Messages);
                 }
             }
             KeyCode::Char('h') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                 if self.props.active_pane == ActivePane::Contacts {
-                    self.props.active_pane = ActivePane::Messages;
+                    self.focus(ActivePane::Messages);
                 }
             }
             KeyCode::Char('l') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                 if self.props.active_pane != ActivePane::Contacts {
-                    self.props.active_pane = ActivePane::Contacts;
+                    self.focus(ActivePane::Contacts);
                 }
             }
-            _ => self.get_active_pane_component_mut().handle_key_event(key),
+            _ => self.get_active_pane_mut().handle_key_event(key),
         }
     }
 }

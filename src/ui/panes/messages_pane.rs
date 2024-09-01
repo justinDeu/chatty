@@ -7,6 +7,8 @@ use crate::state::{action::Action, State};
 
 use crate::ui::components::{Component, ComponentRender};
 
+use super::Pane;
+
 struct Props {
     messages: Vec<Message>,
 }
@@ -21,6 +23,10 @@ impl From<&State> for Props {
 
 pub struct MessagesPane {
     props: Props,
+}
+
+impl Pane for MessagesPane {
+
 }
 
 impl Component for MessagesPane {

@@ -5,6 +5,7 @@ use tokio::sync::mpsc::UnboundedSender;
 use crate::state::Contact;
 use crate::state::{action::Action, State};
 use crate::ui::components::{Component, ComponentRender};
+use crate::ui::panes::Pane;
 
 struct Props {
     conversations: Vec<Contact>,
@@ -22,6 +23,18 @@ pub struct ConversationsPane {
     action_tx: UnboundedSender<Action>,
     props: Props,
     list_state: ListState,
+    is_focused: bool
+}
+
+impl Pane for ConversationsPane {
+    fn focus(&mut self) {
+        self.is_focused = true;
+        self.list_state.select(Some(0));
+    }
+
+    fn unfocus(&mut self) {
+        self.is_focused = false;
+    }
 }
 
 impl Component for ConversationsPane {
@@ -30,6 +43,7 @@ impl Component for ConversationsPane {
             action_tx: action_tx.clone(),
             props: Props::from(state),
             list_state: ListState::default(),
+            is_focused: false,
         }
     }
 
@@ -100,6 +114,11 @@ impl ComponentRender<RenderProps> for ConversationsPane {
             )
             .highlight_symbol(">")
             .highlight_spacing(HighlightSpacing::Always);
-        frame.render_stateful_widget(contacts, props.area, &mut self.list_state.clone());
+
+        if self.is_focused {
+            frame.render_stateful_widget(contacts, props.area, &mut self.list_state.clone());
+        } else {
+            frame.render_widget(contacts, props.area);
+        }
     }
 }
