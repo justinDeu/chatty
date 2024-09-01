@@ -1,5 +1,5 @@
 use crossterm::event::KeyEvent;
-use ratatui::{prelude::Backend, Frame};
+use ratatui::Frame;
 use tokio::sync::mpsc::UnboundedSender;
 
 use crate::state::{action::Action, State};

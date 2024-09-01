@@ -64,6 +64,7 @@ impl StateStore {
 
             // Update state from backend
             state.chat.messages = backend.get_messages(&state.chat.contact, Some(100));
+            state.conversations = ConversationList::new(backend.get_recent_contacts());
 
             // Send state out
             self.state_tx.send(state.clone())?;
