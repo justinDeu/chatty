@@ -12,11 +12,9 @@ pub struct InputPane {
     state: State,
     action_tx: UnboundedSender<Action>,
 
-    // Why is this pub here?
+    // TODO: Why is this pub here?
     pub input_box: InputBox,
 }
-
-// TODO: Implement sending message here, dispatch action
 
 impl Component for InputPane {
     fn new(state: &State, action_tx: UnboundedSender<Action>) -> Self {
