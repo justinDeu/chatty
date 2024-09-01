@@ -1,4 +1,4 @@
-use crossterm::event::{KeyEvent, KeyEventKind};
+use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
 use ratatui::{prelude::*, Frame};
 use tokio::sync::mpsc::UnboundedSender;
 
@@ -12,14 +12,20 @@ use super::Pane;
 
 pub struct InputPane {
     _state: State,
-    _action_tx: UnboundedSender<Action>,
-
-    // TODO: Why is this pub here?
-    pub input_box: InputBox,
+    action_tx: UnboundedSender<Action>,
+    input_box: InputBox,
 }
 
 impl Pane for InputPane {
     // Doesn't have to override anything
+}
+
+impl InputPane {
+    fn send_message(&mut self) {
+        let _ = self.action_tx.send(Action::SendMessage(String::from(self.input_box.text())));
+        self.input_box.reset();
+    }
+
 }
 
 
@@ -27,7 +33,7 @@ impl Component for InputPane {
     fn new(state: &State, action_tx: UnboundedSender<Action>) -> Self {
         Self {
             _state: state.clone(),
-            _action_tx: action_tx.clone(),
+            action_tx: action_tx.clone(),
             input_box: InputBox::new(state, action_tx),
         }
     }
@@ -48,7 +54,14 @@ impl Component for InputPane {
             return;
         }
 
-        self.input_box.handle_key_event(key);
+        match key.code {
+            KeyCode::Enter => {
+                self.send_message();
+            }
+            _ => {self.input_box.handle_key_event(key);}
+        }
+
+
     }
 }
 
