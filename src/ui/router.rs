@@ -1,63 +1,75 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{prelude::*, Frame};
 use tokio::sync::mpsc::UnboundedSender;
-use tracing::{debug, event, Level};
+use tracing::{event, Level};
 
 use crate::state::{action::Action, State};
 
 use super::panes::conversations::conversations_pane;
+use super::panes::dev_console::dev_console::{self, DevConsole};
 use super::panes::{input_pane, messages_pane, Pane};
+use super::popup_area;
 
 use crate::ui::components::component::Component;
 use crate::ui::components::component::ComponentRender;
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 enum ActivePane {
     Input,
     Messages,
     Contacts,
-}
 
-struct Props {
-    active_pane: ActivePane,
+    #[cfg(debug_assertions)]
+    Popup,
 }
 
 pub struct AppRouter {
-    props: Props,
+    active_pane: ActivePane,
     action_sender: UnboundedSender<Action>,
     input_pane: input_pane::InputPane,
     messages_pane: messages_pane::MessagesPane,
     conversations_pane: conversations_pane::ConversationsPane,
+
+    #[cfg(debug_assertions)]
+    dev_console: DevConsole,
+
+    pre_popup_active_pane: ActivePane,
 }
 
 impl AppRouter {
     fn get_active_pane(&self) -> &dyn Pane {
-        match self.props.active_pane {
+        match self.active_pane {
             ActivePane::Input => &self.input_pane,
             ActivePane::Messages => &self.messages_pane,
             ActivePane::Contacts => &self.conversations_pane,
+
+            #[cfg(debug_assertions)]
+            ActivePane::Popup => &self.dev_console,
         }
     }
 
     fn get_active_pane_mut(&mut self) -> &mut dyn Pane {
-        match self.props.active_pane {
+        match self.active_pane {
             ActivePane::Input => &mut self.input_pane,
             ActivePane::Messages => &mut self.messages_pane,
             ActivePane::Contacts => &mut self.conversations_pane,
+
+            #[cfg(debug_assertions)]
+            ActivePane::Popup => &mut self.dev_console,
         }
     }
 
     fn focus(&mut self, pane: ActivePane) {
-        if self.props.active_pane == pane {
+        if self.active_pane == pane {
             return;
         }
 
-        event!(Level::INFO, "Unfocusing pane {:?}", self.props.active_pane);
+        event!(Level::INFO, "Unfocusing pane {:?}", self.active_pane);
         self.get_active_pane_mut().unfocus();
 
-        self.props.active_pane = pane;
+        self.active_pane = pane;
 
-        event!(Level::INFO, "Focusing pane {:?}", self.props.active_pane);
+        event!(Level::INFO, "Focusing pane {:?}", self.active_pane);
         self.get_active_pane_mut().focus();
     }
 }
@@ -65,9 +77,7 @@ impl AppRouter {
 impl Component for AppRouter {
     fn new(state: &State, action_sender: UnboundedSender<Action>) -> Self {
         AppRouter {
-            props: Props {
-                active_pane: ActivePane::Input,
-            },
+            active_pane: ActivePane::Input,
             action_sender: action_sender.clone(),
             input_pane: input_pane::InputPane::new(state, action_sender.clone()),
             messages_pane: messages_pane::MessagesPane::new(state, action_sender.clone()),
@@ -75,6 +85,10 @@ impl Component for AppRouter {
                 state,
                 action_sender.clone(),
             ),
+            #[cfg(debug_assertions)]
+            dev_console: DevConsole::new(state, action_sender.clone()),
+
+            pre_popup_active_pane: ActivePane::Input,
         }
     }
 
@@ -90,6 +104,10 @@ impl Component for AppRouter {
             input_pane: self.input_pane.move_with_state(state),
             messages_pane: self.messages_pane.move_with_state(state),
             conversations_pane: self.conversations_pane.move_with_state(state),
+
+            #[cfg(debug_assertions)]
+            dev_console: self.dev_console.move_with_state(state),
+
             ..self
         }
     }
@@ -109,25 +127,46 @@ impl Component for AppRouter {
                 let _ = self.action_sender.send(Action::Exit);
             }
             KeyCode::Char('j') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                if self.props.active_pane == ActivePane::Messages {
+                if self.active_pane == ActivePane::Messages {
                     self.focus(ActivePane::Input);
                 }
             }
             KeyCode::Char('k') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                if self.props.active_pane == ActivePane::Input {
+                if self.active_pane == ActivePane::Input {
                     self.focus(ActivePane::Messages);
                 }
             }
             KeyCode::Char('h') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                if self.props.active_pane == ActivePane::Contacts {
+                if self.active_pane == ActivePane::Contacts {
                     self.focus(ActivePane::Messages);
                 }
             }
             KeyCode::Char('l') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                if self.props.active_pane != ActivePane::Contacts {
+                if self.active_pane != ActivePane::Contacts {
                     self.focus(ActivePane::Contacts);
                 }
             }
+            #[cfg(debug_assertions)]
+            KeyCode::Char('d')
+                if key.modifiers.contains(KeyModifiers::CONTROL)
+                    && self.active_pane != ActivePane::Popup =>
+            {
+                self.pre_popup_active_pane = self.active_pane.clone();
+                self.active_pane = ActivePane::Popup;
+            }
+            #[cfg(debug_assertions)]
+            KeyCode::Esc if self.active_pane == ActivePane::Popup => {
+                self.active_pane = self.pre_popup_active_pane.clone();
+            }
+
+            // TODO: In the future, will need a better way to handle this, not
+            // all popups would want to close after enter is hit
+            #[cfg(debug_assertions)]
+            KeyCode::Enter if self.active_pane == ActivePane::Popup => {
+                self.get_active_pane_mut().handle_key_event(key);
+                self.active_pane = self.pre_popup_active_pane.clone();
+            }
+
             _ => self.get_active_pane_mut().handle_key_event(key),
         }
     }
@@ -144,19 +183,19 @@ impl ComponentRender<()> for AppRouter {
             frame,
             input_pane::RenderProps {
                 area: input_area,
-                border_color: if self.props.active_pane == ActivePane::Input {
+                border_color: if self.active_pane == ActivePane::Input {
                     Color::LightRed
                 } else {
                     Color::White
                 },
-                show_cursor: self.props.active_pane == ActivePane::Input,
+                show_cursor: self.active_pane == ActivePane::Input,
             },
         );
         self.messages_pane.render(
             frame,
             messages_pane::RenderProps {
                 area: messages_area,
-                border_color: if self.props.active_pane == ActivePane::Messages {
+                border_color: if self.active_pane == ActivePane::Messages {
                     Color::LightRed
                 } else {
                     Color::White
@@ -167,12 +206,23 @@ impl ComponentRender<()> for AppRouter {
             frame,
             conversations_pane::RenderProps {
                 area: conversation_area,
-                border_color: if self.props.active_pane == ActivePane::Contacts {
+                border_color: if self.active_pane == ActivePane::Contacts {
                     Color::LightRed
                 } else {
                     Color::White
                 },
             },
         );
+
+        #[cfg(debug_assertions)]
+        if self.active_pane == ActivePane::Popup {
+            self.dev_console.render(
+                frame,
+                dev_console::RenderProps {
+                    area: popup_area(frame.size(), 60, 20),
+                    border_color: Color::LightGreen,
+                },
+            );
+        }
     }
 }
