@@ -1,11 +1,13 @@
 use core::panic;
 
+use clap::{Parser, Subcommand};
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
 use ratatui::{layout::Rect, prelude::Color, widgets::Clear};
 use tokio::sync::mpsc::UnboundedSender;
+use tracing::{event, Level};
 
 use crate::{
-    state::{action::Action, Contact, Message, State},
+    state::{action::Action, Contact, Message, MessageDirection, State},
     ui::{
         components::{
             input_box::{self, InputBox},
@@ -14,6 +16,28 @@ use crate::{
         panes::Pane,
     },
 };
+
+#[derive(Debug, Parser)]
+#[command(multicall = true)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Debug, Subcommand)]
+enum Commands {
+    SendTo {
+        contact_name: String,
+        phone_number: String,
+        message: String,
+    },
+    SendFrom {
+        contact_name: String,
+        phone_number: String,
+        message: String,
+    },
+    Panic,
+}
 
 pub struct DevConsole {
     _state: State,
@@ -24,46 +48,57 @@ pub struct DevConsole {
 
 impl DevConsole {
     fn handle_command(&mut self) {
-        let cmd_parts: Vec<&str> = self.input_box.text().split_ascii_whitespace().collect();
+        let args = match shlex::split(self.input_box.text()) {
+            Some(args) => args,
+            None => {
+                self.input_box.reset();
+                event!(Level::INFO, "shlex split failed");
+                return;
+            }
+        };
 
-        match cmd_parts[0] {
-            "send-to" => self.handle_send_to(&cmd_parts[1..]),
-            "send-from" => self.handle_send_from(&cmd_parts[1..]),
-            "panic" => self.handle_panic(),
-            _ => (),
+        let cli = match Cli::try_parse_from(args) {
+            Ok(cli) => cli,
+            Err(e) => {
+                self.input_box.reset();
+                event!(Level::INFO, "CLI parsing failed: {:?}", e);
+                return;
+            }
+        };
+
+        event!(Level::DEBUG, "Parsed dev command: {:?}", cli.command);
+
+        match cli.command {
+            Commands::SendFrom {
+                contact_name,
+                phone_number,
+                message,
+            } => {
+                let _ = self.action_tx.send(Action::SendMessage(Message::new(
+                    Contact::new(contact_name, phone_number),
+                    message,
+                    chrono::offset::Local::now().naive_local(),
+                    MessageDirection::From,
+                )));
+            }
+            Commands::SendTo {
+                contact_name,
+                phone_number,
+                message,
+            } => {
+                let _ = self.action_tx.send(Action::SendMessage(Message::new(
+                    Contact::new(contact_name, phone_number),
+                    message,
+                    chrono::offset::Local::now().naive_local(),
+                    MessageDirection::To,
+                )));
+            }
+            Commands::Panic => {
+                panic!("Dev Console Panic")
+            }
         }
 
-        self.input_box.reset()
-    }
-
-    fn handle_send_to(&self, args: &[&str]) {
-        if args.is_empty() {
-            return;
-        }
-
-        let _ = self.action_tx.send(Action::SendMessage(Message::new(
-            Contact::new(String::from("test"), String::from("bar")),
-            args.join(" "),
-            chrono::offset::Local::now().naive_local(),
-            crate::state::MessageDirection::To,
-        )));
-    }
-
-    fn handle_send_from(&self, args: &[&str]) {
-        if args.is_empty() {
-            return;
-        }
-
-        let _ = self.action_tx.send(Action::SendMessage(Message::new(
-            Contact::new(String::from("test"), String::from("bar")),
-            args.join(" "),
-            chrono::offset::Local::now().naive_local(),
-            crate::state::MessageDirection::From,
-        )));
-    }
-
-    fn handle_panic(&self) {
-        panic!("Dev Console Panic")
+        self.input_box.reset();
     }
 }
 
