@@ -1,16 +1,17 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{prelude::*, Frame};
 use tokio::sync::mpsc::UnboundedSender;
+use tracing::{debug, event, Level};
 
 use crate::state::{action::Action, State};
 
-use super::panes::{input_pane, messages_pane, Pane};
 use super::panes::conversations::conversations_pane;
+use super::panes::{input_pane, messages_pane, Pane};
 
 use crate::ui::components::component::Component;
 use crate::ui::components::component::ComponentRender;
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Debug)]
 enum ActivePane {
     Input,
     Messages,
@@ -51,8 +52,12 @@ impl AppRouter {
             return;
         }
 
+        event!(Level::INFO, "Unfocusing pane {:?}", self.props.active_pane);
         self.get_active_pane_mut().unfocus();
+
         self.props.active_pane = pane;
+
+        event!(Level::INFO, "Focusing pane {:?}", self.props.active_pane);
         self.get_active_pane_mut().focus();
     }
 }
@@ -94,10 +99,13 @@ impl Component for AppRouter {
             return;
         }
 
+        event!(Level::DEBUG, "Received key event: {:?}", key.code);
+
         // Handle top-level key-binds regardless of active pane, otherwise send
         // to the active pane
         match key.code {
             KeyCode::Char('q') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                event!(Level::INFO, "Sending Action::Exit");
                 let _ = self.action_sender.send(Action::Exit);
             }
             KeyCode::Char('j') if key.modifiers.contains(KeyModifiers::CONTROL) => {
