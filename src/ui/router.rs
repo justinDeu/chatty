@@ -1,7 +1,7 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{prelude::*, Frame};
 use tokio::sync::mpsc::UnboundedSender;
-use tracing::{debug, event, Level};
+use tracing::{event, Level};
 
 use crate::state::{action::Action, State};
 
@@ -18,6 +18,8 @@ enum ActivePane {
     Input,
     Messages,
     Contacts,
+
+    #[cfg(debug_assertions)]
     Popup,
 }
 
@@ -28,7 +30,9 @@ pub struct AppRouter {
     messages_pane: messages_pane::MessagesPane,
     conversations_pane: conversations_pane::ConversationsPane,
 
+    #[cfg(debug_assertions)]
     dev_console: DevConsole,
+
     pre_popup_active_pane: ActivePane,
 }
 
@@ -38,6 +42,8 @@ impl AppRouter {
             ActivePane::Input => &self.input_pane,
             ActivePane::Messages => &self.messages_pane,
             ActivePane::Contacts => &self.conversations_pane,
+
+            #[cfg(debug_assertions)]
             ActivePane::Popup => &self.dev_console,
         }
     }
@@ -47,6 +53,8 @@ impl AppRouter {
             ActivePane::Input => &mut self.input_pane,
             ActivePane::Messages => &mut self.messages_pane,
             ActivePane::Contacts => &mut self.conversations_pane,
+
+            #[cfg(debug_assertions)]
             ActivePane::Popup => &mut self.dev_console,
         }
     }
@@ -77,7 +85,9 @@ impl Component for AppRouter {
                 state,
                 action_sender.clone(),
             ),
+            #[cfg(debug_assertions)]
             dev_console: DevConsole::new(state, action_sender.clone()),
+
             pre_popup_active_pane: ActivePane::Input,
         }
     }
@@ -94,7 +104,10 @@ impl Component for AppRouter {
             input_pane: self.input_pane.move_with_state(state),
             messages_pane: self.messages_pane.move_with_state(state),
             conversations_pane: self.conversations_pane.move_with_state(state),
+
+            #[cfg(debug_assertions)]
             dev_console: self.dev_console.move_with_state(state),
+
             ..self
         }
     }
@@ -133,6 +146,7 @@ impl Component for AppRouter {
                     self.focus(ActivePane::Contacts);
                 }
             }
+            #[cfg(debug_assertions)]
             KeyCode::Char('d')
                 if key.modifiers.contains(KeyModifiers::CONTROL)
                     && self.active_pane != ActivePane::Popup =>
@@ -140,16 +154,19 @@ impl Component for AppRouter {
                 self.pre_popup_active_pane = self.active_pane.clone();
                 self.active_pane = ActivePane::Popup;
             }
+            #[cfg(debug_assertions)]
             KeyCode::Esc if self.active_pane == ActivePane::Popup => {
                 self.active_pane = self.pre_popup_active_pane.clone();
             }
 
             // TODO: In the future, will need a better way to handle this, not
             // all popups would want to close after enter is hit
+            #[cfg(debug_assertions)]
             KeyCode::Enter if self.active_pane == ActivePane::Popup => {
                 self.get_active_pane_mut().handle_key_event(key);
                 self.active_pane = self.pre_popup_active_pane.clone();
             }
+
             _ => self.get_active_pane_mut().handle_key_event(key),
         }
     }
@@ -197,6 +214,7 @@ impl ComponentRender<()> for AppRouter {
             },
         );
 
+        #[cfg(debug_assertions)]
         if self.active_pane == ActivePane::Popup {
             self.dev_console.render(
                 frame,
