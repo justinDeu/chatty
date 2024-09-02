@@ -1,15 +1,13 @@
-use chrono::NaiveDateTime;
 use tokio::sync::{
     broadcast,
     mpsc::{self, UnboundedReceiver, UnboundedSender},
 };
 
 use crate::backends::MsgBackend;
-use crate::{state::MessageDirection, Interrupted, Terminator};
+use crate::{Interrupted, Terminator};
 
-use super::{action::Action, Chat, ConversationList, Message, State};
+use super::{action::Action, Chat, ConversationList, State};
 
-// TODO: Need to create State and update sender type
 pub struct StateStore {
     state_tx: UnboundedSender<State>,
 }

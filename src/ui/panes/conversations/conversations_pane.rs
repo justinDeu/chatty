@@ -1,6 +1,7 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
 use ratatui::{prelude::*, widgets::*, Frame};
 use tokio::sync::mpsc::UnboundedSender;
+use tracing::{event, Level};
 
 use crate::state::Contact;
 use crate::state::{action::Action, State};
@@ -23,7 +24,7 @@ pub struct ConversationsPane {
     action_tx: UnboundedSender<Action>,
     props: Props,
     list_state: ListState,
-    is_focused: bool
+    is_focused: bool,
 }
 
 impl Pane for ConversationsPane {
@@ -84,14 +85,17 @@ impl Component for ConversationsPane {
             KeyCode::Char('k') => {
                 self.list_state.select_previous();
             }
-            KeyCode::Enter  if self.list_state.selected().is_some() => {
-                let _ = self.action_tx.send(Action::FocusConversation(
-                    self.props.conversations[self
-                        .list_state
-                        .selected()
-                        .unwrap()]
-                    .clone(),
-                ));
+            KeyCode::Enter if self.list_state.selected().is_some() => {
+                let selected_conversation =
+                    self.props.conversations[self.list_state.selected().unwrap()].clone();
+                event!(
+                    Level::INFO,
+                    "Focusing conversation: {:?}",
+                    selected_conversation.name
+                );
+                let _ = self
+                    .action_tx
+                    .send(Action::FocusConversation(selected_conversation));
             }
             _ => {}
         }
