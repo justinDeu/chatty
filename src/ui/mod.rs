@@ -2,7 +2,7 @@ pub use manager::UiManager;
 use ratatui::layout::{Constraint, Flex, Layout, Rect};
 
 mod components;
-mod manager;
+pub mod manager;
 mod panes;
 mod router;
 
