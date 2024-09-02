@@ -143,6 +143,13 @@ impl Component for AppRouter {
             KeyCode::Esc if self.active_pane == ActivePane::Popup => {
                 self.active_pane = self.pre_popup_active_pane.clone();
             }
+
+            // TODO: In the future, will need a better way to handle this, not
+            // all popups would want to close after enter is hit
+            KeyCode::Enter if self.active_pane == ActivePane::Popup => {
+                self.get_active_pane_mut().handle_key_event(key);
+                self.active_pane = self.pre_popup_active_pane.clone();
+            }
             _ => self.get_active_pane_mut().handle_key_event(key),
         }
     }
