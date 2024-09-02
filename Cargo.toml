@@ -3,6 +3,9 @@ name = "chatty"
 version = "0.1.0"
 edition = "2021"
 
+authors = ["justindeu"]
+homepage = "https://github.com/justinDeu/chatty"
+
 [dependencies]
 anyhow = "1.0.86"
 chrono = "0.4.38"
@@ -19,4 +22,8 @@ tokio-stream = "0.1.15"
 tracing = "0.1.40"
 tracing-error = "0.2.0"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
+human-panic = "2.0.1"
+libc = "0.2.158"
+better-panic = "0.3.0"
+strip-ansi-escapes = "0.2.0"
 
