@@ -46,11 +46,14 @@ impl Component for InputPane {
         "Message Input"
     }
 
-    fn move_with_state(self, _state: &State) -> Self
+    fn move_with_state(self, state: &State) -> Self
     where
         Self: Sized,
     {
-        Self { ..self }
+        Self {
+            state: state.clone(),
+            ..self
+        }
     }
 
     fn handle_key_event(&mut self, key: KeyEvent) {
