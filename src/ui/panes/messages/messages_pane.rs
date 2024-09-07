@@ -1,13 +1,12 @@
-use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
+use crossterm::event::{KeyEvent, KeyEventKind};
 use ratatui::{prelude::*, widgets::*, Frame};
 use tokio::sync::mpsc::UnboundedSender;
 
-use crate::state::{Message, MessageDirection};
-use crate::state::{action::Action, State};
+use super::message::MessageLine;
+use crate::state::{action::Action, Message, State};
 
 use crate::ui::components::{Component, ComponentRender};
-
-use super::Pane;
+use crate::ui::panes::Pane;
 
 struct Props {
     messages: Vec<Message>,
@@ -25,9 +24,7 @@ pub struct MessagesPane {
     props: Props,
 }
 
-impl Pane for MessagesPane {
-
-}
+impl Pane for MessagesPane {}
 
 impl Component for MessagesPane {
     fn new(state: &State, _action_tx: UnboundedSender<Action>) -> Self {
@@ -63,16 +60,17 @@ pub struct RenderProps {
 
 impl ComponentRender<RenderProps> for MessagesPane {
     fn render(&self, frame: &mut Frame, props: RenderProps) {
-        let block = List::new(self.props.messages.iter().map(|x|
-                match x.direction {
-                    MessageDirection::To => ListItem::new(Text::from(x.content.clone()).alignment(Alignment::Right)),
-                    MessageDirection::From => ListItem::new(Text::from(x.content.clone()).alignment(Alignment::Left))
-                }
-            )).block(
-                Block::bordered()
-                    .title(self.name())
-                    .border_type(BorderType::Rounded)
-                    .border_style(Style::default().fg(props.border_color)),
+        let block = List::new(
+            self.props
+                .messages
+                .iter()
+                .map(|x| MessageLine::from(x.clone())),
+        )
+        .block(
+            Block::bordered()
+                .title(self.name())
+                .border_type(BorderType::Rounded)
+                .border_style(Style::default().fg(props.border_color)),
         );
 
         frame.render_widget(block, props.area);

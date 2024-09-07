@@ -7,7 +7,8 @@ use crate::state::{action::Action, State};
 
 use super::panes::conversations::conversations_pane;
 use super::panes::dev_console::dev_console::{self, DevConsole};
-use super::panes::{input_pane, messages_pane, Pane};
+use super::panes::messages::{MessagesPane, MessagesPaneRenderProps};
+use super::panes::{input_pane, Pane};
 use super::popup_area;
 
 use crate::ui::components::component::Component;
@@ -27,7 +28,7 @@ pub struct AppRouter {
     active_pane: ActivePane,
     action_sender: UnboundedSender<Action>,
     input_pane: input_pane::InputPane,
-    messages_pane: messages_pane::MessagesPane,
+    messages_pane: MessagesPane,
     conversations_pane: conversations_pane::ConversationsPane,
 
     #[cfg(debug_assertions)]
@@ -80,7 +81,7 @@ impl Component for AppRouter {
             active_pane: ActivePane::Input,
             action_sender: action_sender.clone(),
             input_pane: input_pane::InputPane::new(state, action_sender.clone()),
-            messages_pane: messages_pane::MessagesPane::new(state, action_sender.clone()),
+            messages_pane: MessagesPane::new(state, action_sender.clone()),
             conversations_pane: conversations_pane::ConversationsPane::new(
                 state,
                 action_sender.clone(),
@@ -193,7 +194,7 @@ impl ComponentRender<()> for AppRouter {
         );
         self.messages_pane.render(
             frame,
-            messages_pane::RenderProps {
+            MessagesPaneRenderProps {
                 area: messages_area,
                 border_color: if self.active_pane == ActivePane::Messages {
                     Color::LightRed
