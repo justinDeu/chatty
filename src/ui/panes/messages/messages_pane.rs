@@ -2,7 +2,6 @@ use crossterm::event::{KeyEvent, KeyEventKind};
 use ratatui::{prelude::*, widgets::*, Frame};
 use tokio::sync::mpsc::UnboundedSender;
 
-use super::message::MessageLine;
 use crate::state::{action::Action, Message, State};
 
 use crate::ui::components::{Component, ComponentRender};
@@ -60,13 +59,7 @@ pub struct RenderProps {
 
 impl ComponentRender<RenderProps> for MessagesPane {
     fn render(&self, frame: &mut Frame, props: RenderProps) {
-        let block = List::new(
-            self.props
-                .messages
-                .iter()
-                .map(|x| MessageLine::from(x.clone())),
-        )
-        .block(
+        let block = List::new(self.props.messages.iter()).block(
             Block::bordered()
                 .title(self.name())
                 .border_type(BorderType::Rounded)

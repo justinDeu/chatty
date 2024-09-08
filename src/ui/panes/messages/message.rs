@@ -4,26 +4,10 @@ use ratatui::{
     widgets::ListItem,
 };
 
-use crate::state::{Contact, Message, MessageDirection};
+use crate::state::{Message, MessageDirection};
 
-pub struct MessageLine {
-    contact: Contact,
-    content: String,
-    direction: MessageDirection,
-}
-
-impl From<Message> for MessageLine {
-    fn from(value: Message) -> Self {
-        MessageLine {
-            contact: value.contact,
-            content: value.content,
-            direction: value.direction,
-        }
-    }
-}
-
-impl From<MessageLine> for ListItem<'_> {
-    fn from(val: MessageLine) -> Self {
+impl From<&Message> for ListItem<'_> {
+    fn from(val: &Message) -> Self {
         let sender: String = match val.direction {
             MessageDirection::To => "Me:".into(),
             MessageDirection::From => format!("{}:", val.contact.name),
@@ -34,10 +18,9 @@ impl From<MessageLine> for ListItem<'_> {
         };
 
         ListItem::new(Text::from(Line::from(vec![
-            Span::from("11:22:33 "),
+            Span::from(format!("{} ", val.timestamp.format("%H:%M:%S"))),
             Span::styled(sender, Style::default().fg(color)),
-            Span::from(" "),
-            Span::from(val.content),
+            Span::from(format!(" {}", val.content.clone())),
         ])))
     }
 }
